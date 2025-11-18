@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { SearchInput } from "@/components/SearchInput";
 import {
   Table,
   TableBody,
@@ -12,9 +14,23 @@ import { Badge } from "@/components/ui/badge";
 import type { Service } from "@shared/schema";
 
 export default function Services() {
+  const [searchQuery, setSearchQuery] = useState("");
   const { data: services, isLoading, isError } = useQuery<Service[]>({
     queryKey: ["/api/services"],
   });
+
+  const filteredServices = useMemo(() => {
+    if (!services) return [];
+    if (!searchQuery.trim()) return services;
+
+    const query = searchQuery.toLowerCase();
+    return services.filter(
+      (service) =>
+        service.name.toLowerCase().includes(query) ||
+        service.namespace.toLowerCase().includes(query) ||
+        service.type.toLowerCase().includes(query)
+    );
+  }, [services, searchQuery]);
 
   if (isLoading) {
     return (
@@ -66,13 +82,22 @@ export default function Services() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold" data-testid="text-page-title">
-          Services
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage network services and endpoints
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold" data-testid="text-page-title">
+            Services
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage network services and endpoints
+          </p>
+        </div>
+        <div className="w-64">
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search services..."
+          />
+        </div>
       </div>
 
       <div className="border rounded-lg overflow-hidden">
@@ -89,8 +114,8 @@ export default function Services() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {services && services.length > 0 ? (
-              services.map((service) => (
+            {filteredServices.length > 0 ? (
+              filteredServices.map((service) => (
                 <TableRow key={service.id} className="hover-elevate" data-testid={`row-service-${service.id}`}>
                   <TableCell className="font-medium" data-testid={`text-service-name-${service.id}`}>
                     {service.name}
@@ -118,7 +143,7 @@ export default function Services() {
             ) : (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                  No services found
+                  {searchQuery ? "No services match your search" : "No services found"}
                 </TableCell>
               </TableRow>
             )}

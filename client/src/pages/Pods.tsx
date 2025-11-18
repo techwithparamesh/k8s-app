@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
+import { SearchInput } from "@/components/SearchInput";
 import {
   Table,
   TableBody,
@@ -12,9 +14,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Pod } from "@shared/schema";
 
 export default function Pods() {
+  const [searchQuery, setSearchQuery] = useState("");
   const { data: pods, isLoading, isError } = useQuery<Pod[]>({
     queryKey: ["/api/pods"],
   });
+
+  const filteredPods = useMemo(() => {
+    if (!pods) return [];
+    if (!searchQuery.trim()) return pods;
+
+    const query = searchQuery.toLowerCase();
+    return pods.filter(
+      (pod) =>
+        pod.name.toLowerCase().includes(query) ||
+        pod.namespace.toLowerCase().includes(query) ||
+        pod.status.toLowerCase().includes(query)
+    );
+  }, [pods, searchQuery]);
 
   if (isLoading) {
     return (
@@ -55,13 +71,22 @@ export default function Pods() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold" data-testid="text-page-title">
-          Pods
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage and monitor your cluster pods
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold" data-testid="text-page-title">
+            Pods
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage and monitor your cluster pods
+          </p>
+        </div>
+        <div className="w-64">
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search pods..."
+          />
+        </div>
       </div>
 
       <div className="border rounded-lg overflow-hidden">
@@ -76,8 +101,8 @@ export default function Pods() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {pods && pods.length > 0 ? (
-              pods.map((pod) => (
+            {filteredPods.length > 0 ? (
+              filteredPods.map((pod) => (
                 <TableRow key={pod.id} className="hover-elevate" data-testid={`row-pod-${pod.id}`}>
                   <TableCell className="font-medium" data-testid={`text-pod-name-${pod.id}`}>
                     {pod.name}
@@ -95,7 +120,7 @@ export default function Pods() {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                  No pods found
+                  {searchQuery ? "No pods match your search" : "No pods found"}
                 </TableCell>
               </TableRow>
             )}

@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
+import { SearchInput } from "@/components/SearchInput";
 import {
   Table,
   TableBody,
@@ -12,9 +14,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Node } from "@shared/schema";
 
 export default function Nodes() {
+  const [searchQuery, setSearchQuery] = useState("");
   const { data: nodes, isLoading, isError } = useQuery<Node[]>({
     queryKey: ["/api/nodes"],
   });
+
+  const filteredNodes = useMemo(() => {
+    if (!nodes) return [];
+    if (!searchQuery.trim()) return nodes;
+
+    const query = searchQuery.toLowerCase();
+    return nodes.filter(
+      (node) =>
+        node.name.toLowerCase().includes(query) ||
+        node.status.toLowerCase().includes(query)
+    );
+  }, [nodes, searchQuery]);
 
   if (isLoading) {
     return (
@@ -55,13 +70,22 @@ export default function Nodes() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold" data-testid="text-page-title">
-          Nodes
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Monitor cluster node resources and health
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold" data-testid="text-page-title">
+            Nodes
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Monitor cluster node resources and health
+          </p>
+        </div>
+        <div className="w-64">
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search nodes..."
+          />
+        </div>
       </div>
 
       <div className="border rounded-lg overflow-hidden">
@@ -77,8 +101,8 @@ export default function Nodes() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {nodes && nodes.length > 0 ? (
-              nodes.map((node) => (
+            {filteredNodes.length > 0 ? (
+              filteredNodes.map((node) => (
                 <TableRow key={node.id} className="hover-elevate" data-testid={`row-node-${node.id}`}>
                   <TableCell className="font-medium" data-testid={`text-node-name-${node.id}`}>
                     {node.name}
@@ -99,7 +123,7 @@ export default function Nodes() {
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  No nodes found
+                  {searchQuery ? "No nodes match your search" : "No nodes found"}
                 </TableCell>
               </TableRow>
             )}

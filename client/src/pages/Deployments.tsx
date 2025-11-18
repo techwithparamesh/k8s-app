@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { SearchInput } from "@/components/SearchInput";
 import {
   Table,
   TableBody,
@@ -12,9 +14,22 @@ import { Badge } from "@/components/ui/badge";
 import type { Deployment } from "@shared/schema";
 
 export default function Deployments() {
+  const [searchQuery, setSearchQuery] = useState("");
   const { data: deployments, isLoading, isError } = useQuery<Deployment[]>({
     queryKey: ["/api/deployments"],
   });
+
+  const filteredDeployments = useMemo(() => {
+    if (!deployments) return [];
+    if (!searchQuery.trim()) return deployments;
+
+    const query = searchQuery.toLowerCase();
+    return deployments.filter(
+      (deployment) =>
+        deployment.name.toLowerCase().includes(query) ||
+        deployment.namespace.toLowerCase().includes(query)
+    );
+  }, [deployments, searchQuery]);
 
   if (isLoading) {
     return (
@@ -55,13 +70,22 @@ export default function Deployments() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold" data-testid="text-page-title">
-          Deployments
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage your application deployments
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold" data-testid="text-page-title">
+            Deployments
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage your application deployments
+          </p>
+        </div>
+        <div className="w-64">
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search deployments..."
+          />
+        </div>
       </div>
 
       <div className="border rounded-lg overflow-hidden">
@@ -77,8 +101,8 @@ export default function Deployments() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {deployments && deployments.length > 0 ? (
-              deployments.map((deployment) => (
+            {filteredDeployments.length > 0 ? (
+              filteredDeployments.map((deployment) => (
                 <TableRow key={deployment.id} className="hover-elevate" data-testid={`row-deployment-${deployment.id}`}>
                   <TableCell className="font-medium" data-testid={`text-deployment-name-${deployment.id}`}>
                     {deployment.name}
@@ -99,7 +123,7 @@ export default function Deployments() {
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  No deployments found
+                  {searchQuery ? "No deployments match your search" : "No deployments found"}
                 </TableCell>
               </TableRow>
             )}
