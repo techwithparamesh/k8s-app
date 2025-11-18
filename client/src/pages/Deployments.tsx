@@ -1,0 +1,92 @@
+import { useQuery } from "@tanstack/react-query";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import type { Deployment } from "@shared/schema";
+
+export default function Deployments() {
+  const { data: deployments, isLoading } = useQuery<Deployment[]>({
+    queryKey: ["/api/deployments"],
+  });
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold">Deployments</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage your application deployments
+          </p>
+        </div>
+        <div className="space-y-2">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold" data-testid="text-page-title">
+          Deployments
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Manage your application deployments
+        </p>
+      </div>
+
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="font-semibold">Name</TableHead>
+              <TableHead className="font-semibold">Namespace</TableHead>
+              <TableHead className="font-semibold">Ready</TableHead>
+              <TableHead className="font-semibold">Up-to-date</TableHead>
+              <TableHead className="font-semibold">Available</TableHead>
+              <TableHead className="font-semibold">Age</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {deployments && deployments.length > 0 ? (
+              deployments.map((deployment) => (
+                <TableRow key={deployment.id} className="hover-elevate" data-testid={`row-deployment-${deployment.id}`}>
+                  <TableCell className="font-medium" data-testid={`text-deployment-name-${deployment.id}`}>
+                    {deployment.name}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-muted-foreground">{deployment.namespace}</span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={deployment.ready === deployment.replicas ? "default" : "secondary"}>
+                      {deployment.ready}/{deployment.replicas}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{deployment.upToDate || 0}</TableCell>
+                  <TableCell>{deployment.available || 0}</TableCell>
+                  <TableCell className="text-muted-foreground">{deployment.age || "N/A"}</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  No deployments found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
