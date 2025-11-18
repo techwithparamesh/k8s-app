@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -72,6 +73,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+
+  // WebSocket server for logs and terminal
+  const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
+
+  wss.on("connection", (ws, req) => {
+    const url = new URL(req.url || "", `http://${req.headers.host}`);
+    const type = url.searchParams.get("type");
+    const podId = url.searchParams.get("podId");
+
+    if (type === "logs" && podId) {
+      // Simulate streaming logs
+      const logMessages = [
+        `Starting pod ${podId}...`,
+        `Pulling image "nginx:latest"...`,
+        `Successfully pulled image`,
+        `Creating container...`,
+        `Container created successfully`,
+        `Starting container...`,
+        `Container started`,
+        `[INFO] Application listening on port 8080`,
+        `[INFO] Database connection established`,
+        `[INFO] Ready to accept connections`,
+      ];
+
+      let index = 0;
+      const interval = setInterval(() => {
+        if (index < logMessages.length) {
+          ws.send(
+            JSON.stringify({
+              timestamp: new Date().toISOString(),
+              message: logMessages[index],
+            })
+          );
+          index++;
+        } else {
+          // Send periodic updates
+          const randomLogs = [
+            "[INFO] Health check passed",
+            "[DEBUG] Processing request",
+            "[INFO] Request completed successfully",
+            "[DEBUG] Cache hit",
+          ];
+          ws.send(
+            JSON.stringify({
+              timestamp: new Date().toISOString(),
+              message: randomLogs[Math.floor(Math.random() * randomLogs.length)],
+            })
+          );
+        }
+      }, 1000);
+
+      ws.on("close", () => {
+        clearInterval(interval);
+      });
+    } else if (type === "terminal" && podId) {
+      // Simulate terminal session
+      ws.send(
+        JSON.stringify({
+          type: "output",
+          data: `Connected to pod ${podId}\nroot@${podId}:/# `,
+        })
+      );
+
+      ws.on("message", (data) => {
+        const message = data.toString();
+        let response = "";
+
+        // Simulate basic command responses
+        if (message.includes("ls")) {
+          response = "app.js  node_modules  package.json  README.md\n";
+        } else if (message.includes("pwd")) {
+          response = "/app\n";
+        } else if (message.includes("whoami")) {
+          response = "root\n";
+        } else if (message.includes("date")) {
+          response = new Date().toString() + "\n";
+        } else if (message.includes("echo")) {
+          response = message.replace("echo ", "") + "\n";
+        } else {
+          response = `bash: ${message.trim()}: command not found\n`;
+        }
+
+        ws.send(
+          JSON.stringify({
+            type: "output",
+            data: response + `root@${podId}:/# `,
+          })
+        );
+      });
+    }
+  });
 
   return httpServer;
 }

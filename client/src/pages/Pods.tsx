@@ -3,6 +3,10 @@ import { useState, useMemo } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { SearchInput } from "@/components/SearchInput";
 import { ResourceDetailModal } from "@/components/ResourceDetailModal";
+import { LogViewer } from "@/components/LogViewer";
+import { Terminal } from "@/components/Terminal";
+import { Button } from "@/components/ui/button";
+import { FileText, Terminal as TerminalIcon } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -18,6 +22,10 @@ export default function Pods() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPod, setSelectedPod] = useState<Pod | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [logsPod, setLogsPod] = useState<{ id: string; name: string } | null>(null);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const [terminalPod, setTerminalPod] = useState<{ id: string; name: string } | null>(null);
+  const [terminalOpen, setTerminalOpen] = useState(false);
 
   const { data: pods, isLoading, isError } = useQuery<Pod[]>({
     queryKey: ["/api/pods"],
@@ -102,6 +110,7 @@ export default function Pods() {
               <TableHead className="font-semibold">Status</TableHead>
               <TableHead className="font-semibold">Restarts</TableHead>
               <TableHead className="font-semibold">Age</TableHead>
+              <TableHead className="font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -127,11 +136,42 @@ export default function Pods() {
                   </TableCell>
                   <TableCell>{pod.restarts || 0}</TableCell>
                   <TableCell className="text-muted-foreground">{pod.age || "N/A"}</TableCell>
+                  <TableCell>
+                    <div
+                      className="flex items-center gap-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLogsPod({ id: pod.id, name: pod.name });
+                          setLogsOpen(true);
+                        }}
+                        data-testid={`button-logs-${pod.id}`}
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTerminalPod({ id: pod.id, name: pod.name });
+                          setTerminalOpen(true);
+                        }}
+                        data-testid={`button-terminal-${pod.id}`}
+                      >
+                        <TerminalIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   {searchQuery ? "No pods match your search" : "No pods found"}
                 </TableCell>
               </TableRow>
@@ -146,6 +186,34 @@ export default function Pods() {
         open={modalOpen}
         onOpenChange={setModalOpen}
       />
+
+      {logsPod && (
+        <LogViewer
+          podId={logsPod.id}
+          podName={logsPod.name}
+          open={logsOpen}
+          onOpenChange={(open) => {
+            setLogsOpen(open);
+            if (!open) {
+              setLogsPod(null);
+            }
+          }}
+        />
+      )}
+
+      {terminalPod && (
+        <Terminal
+          podId={terminalPod.id}
+          podName={terminalPod.name}
+          open={terminalOpen}
+          onOpenChange={(open) => {
+            setTerminalOpen(open);
+            if (!open) {
+              setTerminalPod(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
