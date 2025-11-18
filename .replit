@@ -11,7 +11,7 @@ build = ["npm", "run", "build"]
 run = ["npm", "run", "start"]
 
 [[ports]]
-localPort = 5000
+localPort = 5006
 externalPort = 80
 
 [[ports]]
@@ -23,7 +23,7 @@ localPort = 46549
 externalPort = 3001
 
 [env]
-PORT = "5000"
+PORT = "5006"
 
 [workflows]
 runButton = "Project"
@@ -44,4 +44,4 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
-waitForPort = 5000
+waitForPort = 5006
