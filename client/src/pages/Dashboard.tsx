@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Stats } from "@shared/schema";
 
 export default function Dashboard() {
-  const { data: stats, isLoading } = useQuery<Stats>({
+  const { data: stats, isLoading, isError } = useQuery<Stats>({
     queryKey: ["/api/stats"],
   });
 
@@ -22,6 +22,25 @@ export default function Dashboard() {
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Skeleton key={i} className="h-32 rounded-lg" />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Overview of your Kubernetes cluster
+          </p>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-lg font-medium text-destructive">Failed to load dashboard data</p>
+            <p className="text-sm text-muted-foreground mt-2">Please try refreshing the page</p>
+          </div>
         </div>
       </div>
     );

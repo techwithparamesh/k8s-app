@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Service } from "@shared/schema";
 
 export default function Services() {
-  const { data: services, isLoading } = useQuery<Service[]>({
+  const { data: services, isLoading, isError } = useQuery<Service[]>({
     queryKey: ["/api/services"],
   });
 
@@ -29,6 +29,25 @@ export default function Services() {
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-12 w-full" />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold">Services</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage network services and endpoints
+          </p>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-lg font-medium text-destructive">Failed to load services</p>
+            <p className="text-sm text-muted-foreground mt-2">Please try refreshing the page</p>
+          </div>
         </div>
       </div>
     );

@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Pod } from "@shared/schema";
 
 export default function Pods() {
-  const { data: pods, isLoading } = useQuery<Pod[]>({
+  const { data: pods, isLoading, isError } = useQuery<Pod[]>({
     queryKey: ["/api/pods"],
   });
 
@@ -29,6 +29,25 @@ export default function Pods() {
           {[1, 2, 3, 4, 5].map((i) => (
             <Skeleton key={i} className="h-12 w-full" />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold">Pods</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage and monitor your cluster pods
+          </p>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-lg font-medium text-destructive">Failed to load pods</p>
+            <p className="text-sm text-muted-foreground mt-2">Please try refreshing the page</p>
+          </div>
         </div>
       </div>
     );

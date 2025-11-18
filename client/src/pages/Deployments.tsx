@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Deployment } from "@shared/schema";
 
 export default function Deployments() {
-  const { data: deployments, isLoading } = useQuery<Deployment[]>({
+  const { data: deployments, isLoading, isError } = useQuery<Deployment[]>({
     queryKey: ["/api/deployments"],
   });
 
@@ -29,6 +29,25 @@ export default function Deployments() {
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-12 w-full" />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold">Deployments</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage your application deployments
+          </p>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-lg font-medium text-destructive">Failed to load deployments</p>
+            <p className="text-sm text-muted-foreground mt-2">Please try refreshing the page</p>
+          </div>
         </div>
       </div>
     );
