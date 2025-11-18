@@ -53,6 +53,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Scale deployment
+  app.patch("/api/deployments/:id/scale", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { replicas } = req.body;
+
+      if (typeof replicas !== "number" || replicas < 0) {
+        return res.status(400).json({ error: "Invalid replicas value" });
+      }
+
+      const deployment = await storage.scaleDeployment(id, replicas);
+      res.json(deployment);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to scale deployment";
+      res.status(404).json({ error: message });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

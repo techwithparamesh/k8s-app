@@ -1,7 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { SearchInput } from "@/components/SearchInput";
 import { ResourceDetailModal } from "@/components/ResourceDetailModal";
+import { Button } from "@/components/ui/button";
+import { Minus, Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Table,
   TableBody,
@@ -18,9 +22,30 @@ export default function Deployments() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDeployment, setSelectedDeployment] = useState<Deployment | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const { toast } = useToast();
 
   const { data: deployments, isLoading, isError } = useQuery<Deployment[]>({
     queryKey: ["/api/deployments"],
+  });
+
+  const scaleMutation = useMutation({
+    mutationFn: async ({ id, replicas }: { id: string; replicas: number }) => {
+      return apiRequest("PATCH", `/api/deployments/${id}/scale`, { replicas });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/deployments"] });
+      toast({
+        title: "Deployment scaled",
+        description: "Replica count updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Scaling failed",
+        description: error.message || "Failed to scale deployment",
+      });
+    },
   });
 
   const filteredDeployments = useMemo(() => {
@@ -102,6 +127,7 @@ export default function Deployments() {
               <TableHead className="font-semibold">Up-to-date</TableHead>
               <TableHead className="font-semibold">Available</TableHead>
               <TableHead className="font-semibold">Age</TableHead>
+              <TableHead className="font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -130,11 +156,49 @@ export default function Deployments() {
                   <TableCell>{deployment.upToDate || 0}</TableCell>
                   <TableCell>{deployment.available || 0}</TableCell>
                   <TableCell className="text-muted-foreground">{deployment.age || "N/A"}</TableCell>
+                  <TableCell>
+                    <div
+                      className="flex items-center gap-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() =>
+                          scaleMutation.mutate({
+                            id: deployment.id,
+                            replicas: Math.max(0, deployment.replicas - 1),
+                          })
+                        }
+                        disabled={deployment.replicas === 0 || scaleMutation.isPending}
+                        data-testid={`button-scale-down-${deployment.id}`}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm font-medium w-8 text-center">
+                        {deployment.replicas}
+                      </span>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() =>
+                          scaleMutation.mutate({
+                            id: deployment.id,
+                            replicas: deployment.replicas + 1,
+                          })
+                        }
+                        disabled={scaleMutation.isPending}
+                        data-testid={`button-scale-up-${deployment.id}`}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   {searchQuery ? "No deployments match your search" : "No deployments found"}
                 </TableCell>
               </TableRow>

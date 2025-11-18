@@ -7,6 +7,7 @@ export interface IStorage {
   getNodes(): Promise<Node[]>;
   getDeployments(): Promise<Deployment[]>;
   getServices(): Promise<Service[]>;
+  scaleDeployment(id: string, replicas: number): Promise<Deployment>;
 }
 
 export class MemStorage implements IStorage {
@@ -149,6 +150,20 @@ export class MemStorage implements IStorage {
 
   async getServices(): Promise<Service[]> {
     return this.services;
+  }
+
+  async scaleDeployment(id: string, replicas: number): Promise<Deployment> {
+    const deployment = this.deployments.find((d) => d.id === id);
+    if (!deployment) {
+      throw new Error("Deployment not found");
+    }
+
+    deployment.replicas = replicas;
+    deployment.ready = Math.min(replicas, deployment.ready || 0);
+    deployment.upToDate = Math.min(replicas, deployment.upToDate || 0);
+    deployment.available = Math.min(replicas, deployment.available || 0);
+
+    return deployment;
   }
 }
 
