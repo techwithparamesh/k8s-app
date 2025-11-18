@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { SearchInput } from "@/components/SearchInput";
+import { ResourceDetailModal } from "@/components/ResourceDetailModal";
 import {
   Table,
   TableBody,
@@ -15,6 +16,9 @@ import type { Pod } from "@shared/schema";
 
 export default function Pods() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPod, setSelectedPod] = useState<Pod | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
   const { data: pods, isLoading, isError } = useQuery<Pod[]>({
     queryKey: ["/api/pods"],
   });
@@ -103,7 +107,15 @@ export default function Pods() {
           <TableBody>
             {filteredPods.length > 0 ? (
               filteredPods.map((pod) => (
-                <TableRow key={pod.id} className="hover-elevate" data-testid={`row-pod-${pod.id}`}>
+                <TableRow
+                  key={pod.id}
+                  className="hover-elevate cursor-pointer"
+                  onClick={() => {
+                    setSelectedPod(pod);
+                    setModalOpen(true);
+                  }}
+                  data-testid={`row-pod-${pod.id}`}
+                >
                   <TableCell className="font-medium" data-testid={`text-pod-name-${pod.id}`}>
                     {pod.name}
                   </TableCell>
@@ -127,6 +139,13 @@ export default function Pods() {
           </TableBody>
         </Table>
       </div>
+
+      <ResourceDetailModal
+        resource={selectedPod}
+        type="pod"
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+      />
     </div>
   );
 }

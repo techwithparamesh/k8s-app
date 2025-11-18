@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { SearchInput } from "@/components/SearchInput";
+import { ResourceDetailModal } from "@/components/ResourceDetailModal";
 import {
   Table,
   TableBody,
@@ -15,6 +16,9 @@ import type { Deployment } from "@shared/schema";
 
 export default function Deployments() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDeployment, setSelectedDeployment] = useState<Deployment | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
   const { data: deployments, isLoading, isError } = useQuery<Deployment[]>({
     queryKey: ["/api/deployments"],
   });
@@ -103,7 +107,15 @@ export default function Deployments() {
           <TableBody>
             {filteredDeployments.length > 0 ? (
               filteredDeployments.map((deployment) => (
-                <TableRow key={deployment.id} className="hover-elevate" data-testid={`row-deployment-${deployment.id}`}>
+                <TableRow
+                  key={deployment.id}
+                  className="hover-elevate cursor-pointer"
+                  onClick={() => {
+                    setSelectedDeployment(deployment);
+                    setModalOpen(true);
+                  }}
+                  data-testid={`row-deployment-${deployment.id}`}
+                >
                   <TableCell className="font-medium" data-testid={`text-deployment-name-${deployment.id}`}>
                     {deployment.name}
                   </TableCell>
@@ -130,6 +142,13 @@ export default function Deployments() {
           </TableBody>
         </Table>
       </div>
+
+      <ResourceDetailModal
+        resource={selectedDeployment}
+        type="deployment"
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+      />
     </div>
   );
 }

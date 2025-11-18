@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { SearchInput } from "@/components/SearchInput";
+import { ResourceDetailModal } from "@/components/ResourceDetailModal";
 import {
   Table,
   TableBody,
@@ -15,6 +16,9 @@ import type { Service } from "@shared/schema";
 
 export default function Services() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
   const { data: services, isLoading, isError } = useQuery<Service[]>({
     queryKey: ["/api/services"],
   });
@@ -116,7 +120,15 @@ export default function Services() {
           <TableBody>
             {filteredServices.length > 0 ? (
               filteredServices.map((service) => (
-                <TableRow key={service.id} className="hover-elevate" data-testid={`row-service-${service.id}`}>
+                <TableRow
+                  key={service.id}
+                  className="hover-elevate cursor-pointer"
+                  onClick={() => {
+                    setSelectedService(service);
+                    setModalOpen(true);
+                  }}
+                  data-testid={`row-service-${service.id}`}
+                >
                   <TableCell className="font-medium" data-testid={`text-service-name-${service.id}`}>
                     {service.name}
                   </TableCell>
@@ -150,6 +162,13 @@ export default function Services() {
           </TableBody>
         </Table>
       </div>
+
+      <ResourceDetailModal
+        resource={selectedService}
+        type="service"
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+      />
     </div>
   );
 }

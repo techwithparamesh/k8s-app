@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { SearchInput } from "@/components/SearchInput";
+import { ResourceDetailModal } from "@/components/ResourceDetailModal";
 import {
   Table,
   TableBody,
@@ -15,6 +16,9 @@ import type { Node } from "@shared/schema";
 
 export default function Nodes() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
   const { data: nodes, isLoading, isError } = useQuery<Node[]>({
     queryKey: ["/api/nodes"],
   });
@@ -103,7 +107,15 @@ export default function Nodes() {
           <TableBody>
             {filteredNodes.length > 0 ? (
               filteredNodes.map((node) => (
-                <TableRow key={node.id} className="hover-elevate" data-testid={`row-node-${node.id}`}>
+                <TableRow
+                  key={node.id}
+                  className="hover-elevate cursor-pointer"
+                  onClick={() => {
+                    setSelectedNode(node);
+                    setModalOpen(true);
+                  }}
+                  data-testid={`row-node-${node.id}`}
+                >
                   <TableCell className="font-medium" data-testid={`text-node-name-${node.id}`}>
                     {node.name}
                   </TableCell>
@@ -130,6 +142,13 @@ export default function Nodes() {
           </TableBody>
         </Table>
       </div>
+
+      <ResourceDetailModal
+        resource={selectedNode}
+        type="node"
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+      />
     </div>
   );
 }
