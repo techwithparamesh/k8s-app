@@ -73,17 +73,17 @@ export default function Nodes() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 space-y-6 animate-fade-in">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold" data-testid="text-page-title">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight" data-testid="text-page-title">
             Nodes
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-base text-muted-foreground">
             Monitor cluster node resources and health
           </p>
         </div>
-        <div className="w-64">
+        <div className="w-80">
           <SearchInput
             value={searchQuery}
             onChange={setSearchQuery}
@@ -92,16 +92,16 @@ export default function Nodes() {
         </div>
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border border-border/50 rounded-xl overflow-hidden bg-card/30 backdrop-blur-sm shadow-lg animate-slide-in-up">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="font-semibold">Name</TableHead>
-              <TableHead className="font-semibold">Status</TableHead>
-              <TableHead className="font-semibold">CPU</TableHead>
-              <TableHead className="font-semibold">Memory</TableHead>
-              <TableHead className="font-semibold">Pods</TableHead>
-              <TableHead className="font-semibold">Age</TableHead>
+            <TableRow className="bg-muted/30 hover:bg-muted/30">
+              <TableHead className="font-bold text-xs uppercase tracking-wider">Name</TableHead>
+              <TableHead className="font-bold text-xs uppercase tracking-wider">Status</TableHead>
+              <TableHead className="font-bold text-xs uppercase tracking-wider">CPU</TableHead>
+              <TableHead className="font-bold text-xs uppercase tracking-wider">Memory</TableHead>
+              <TableHead className="font-bold text-xs uppercase tracking-wider">Pods</TableHead>
+              <TableHead className="font-bold text-xs uppercase tracking-wider">Age</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -109,14 +109,14 @@ export default function Nodes() {
               filteredNodes.map((node) => (
                 <TableRow
                   key={node.id}
-                  className="hover-elevate cursor-pointer"
+                  className="hover:bg-muted/20 cursor-pointer transition-colors border-b border-border/30"
                   onClick={() => {
                     setSelectedNode(node);
                     setModalOpen(true);
                   }}
                   data-testid={`row-node-${node.id}`}
                 >
-                  <TableCell className="font-medium" data-testid={`text-node-name-${node.id}`}>
+                  <TableCell className="font-semibold" data-testid={`text-node-name-${node.id}`}>
                     {node.name}
                   </TableCell>
                   <TableCell>

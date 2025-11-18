@@ -54,6 +54,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all routes
+  app.get("/api/routes", async (_req, res) => {
+    try {
+      const routes = await storage.getRoutes();
+      res.json(routes);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch routes" });
+    }
+  });
+
+  // Get all ingresses
+  app.get("/api/ingresses", async (_req, res) => {
+    try {
+      const ingresses = await storage.getIngresses();
+      res.json(ingresses);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch ingresses" });
+    }
+  });
+
+  // Get all config maps
+  app.get("/api/configmaps", async (_req, res) => {
+    try {
+      const configMaps = await storage.getConfigMaps();
+      res.json(configMaps);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch config maps" });
+    }
+  });
+
+  // Get all secrets
+  app.get("/api/secrets", async (_req, res) => {
+    try {
+      const secrets = await storage.getSecrets();
+      res.json(secrets);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch secrets" });
+    }
+  });
+
+  // Get all PVCs
+  app.get("/api/pvcs", async (_req, res) => {
+    try {
+      const pvcs = await storage.getPVCs();
+      res.json(pvcs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch PVCs" });
+    }
+  });
+
+  // Get all network policies
+  app.get("/api/networkpolicies", async (_req, res) => {
+    try {
+      const policies = await storage.getNetworkPolicies();
+      res.json(policies);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch network policies" });
+    }
+  });
+
+  // Get deployment config (YAML)
+  app.get("/api/deployments/:id/config", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const config = await storage.getDeploymentConfig(id);
+      res.json(config);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to fetch deployment config";
+      res.status(404).json({ error: message });
+    }
+  });
+
+  // Get service config (YAML)
+  app.get("/api/services/:id/config", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const config = await storage.getServiceConfig(id);
+      res.json(config);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to fetch service config";
+      res.status(404).json({ error: message });
+    }
+  });
+
+  // Get pod config (YAML)
+  app.get("/api/pods/:id/config", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const config = await storage.getPodConfig(id);
+      res.json(config);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to fetch pod config";
+      res.status(404).json({ error: message });
+    }
+  });
+
   // Scale deployment
   app.patch("/api/deployments/:id/scale", async (req, res) => {
     try {

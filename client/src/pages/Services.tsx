@@ -2,6 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { SearchInput } from "@/components/SearchInput";
 import { ResourceDetailModal } from "@/components/ResourceDetailModal";
+import { YAMLViewer } from "@/components/YAMLViewer";
+import { CreateResourceDialog } from "@/components/CreateResourceDialog";
+import { EmptyState } from "@/components/EmptyState";
+import { TableLoadingState } from "@/components/LoadingState";
+import { ErrorState } from "@/components/ErrorState";
+import { FileCode, Plus, Network } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -10,7 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import type { Service } from "@shared/schema";
 
@@ -18,6 +24,9 @@ export default function Services() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [yamlViewerOpen, setYamlViewerOpen] = useState(false);
+  const [yamlService, setYamlService] = useState<Service | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const { data: services, isLoading, isError } = useQuery<Service[]>({
     queryKey: ["/api/services"],
@@ -37,40 +46,11 @@ export default function Services() {
   }, [services, searchQuery]);
 
   if (isLoading) {
-    return (
-      <div className="p-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Services</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage network services and endpoints
-          </p>
-        </div>
-        <div className="space-y-2">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-12 w-full" />
-          ))}
-        </div>
-      </div>
-    );
+    return <TableLoadingState title="Services" description="Manage network services and endpoints" />;
   }
 
   if (isError) {
-    return (
-      <div className="p-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Services</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage network services and endpoints
-          </p>
-        </div>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <p className="text-lg font-medium text-destructive">Failed to load services</p>
-            <p className="text-sm text-muted-foreground mt-2">Please try refreshing the page</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <ErrorState title="Services" description="Manage network services and endpoints" />;
   }
 
   const getServiceTypeVariant = (type: string) => {
@@ -85,89 +65,142 @@ export default function Services() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 space-y-6 animate-fade-in">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold" data-testid="text-page-title">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight" data-testid="text-page-title">
             Services
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-base text-muted-foreground">
             Manage network services and endpoints
           </p>
         </div>
-        <div className="w-64">
-          <SearchInput
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Search services..."
-          />
+        <div className="flex items-center gap-3">
+          <div className="w-80">
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search services..."
+            />
+          </div>
+          <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Create Service
+          </Button>
         </div>
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="font-semibold">Name</TableHead>
-              <TableHead className="font-semibold">Namespace</TableHead>
-              <TableHead className="font-semibold">Type</TableHead>
-              <TableHead className="font-semibold">Cluster IP</TableHead>
-              <TableHead className="font-semibold">External IP</TableHead>
-              <TableHead className="font-semibold">Ports</TableHead>
-              <TableHead className="font-semibold">Age</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredServices.length > 0 ? (
-              filteredServices.map((service) => (
-                <TableRow
-                  key={service.id}
-                  className="hover-elevate cursor-pointer"
-                  onClick={() => {
-                    setSelectedService(service);
-                    setModalOpen(true);
-                  }}
-                  data-testid={`row-service-${service.id}`}
-                >
-                  <TableCell className="font-medium" data-testid={`text-service-name-${service.id}`}>
-                    {service.name}
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-muted-foreground">{service.namespace}</span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getServiceTypeVariant(service.type)}>
-                      {service.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-mono text-sm">{service.clusterIP || "None"}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-mono text-sm">{service.externalIP || "<none>"}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{service.ports || "N/A"}</span>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{service.age || "N/A"}</TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                  {searchQuery ? "No services match your search" : "No services found"}
-                </TableCell>
+      {filteredServices.length === 0 && !searchQuery ? (
+        <EmptyState
+          icon={<Network className="w-12 h-12" />}
+          title="No Services Found"
+          description="Create your first service to expose your applications and enable network communication within your Kubernetes cluster"
+          primaryAction={{
+            label: "Create Service",
+            onClick: () => setCreateDialogOpen(true),
+          }}
+          secondaryAction={{
+            label: "Learn More",
+            href: "https://kubernetes.io/docs/concepts/services-networking/service/",
+          }}
+        />
+      ) : (
+        <div className="border border-border/50 rounded-xl overflow-hidden bg-card/30 backdrop-blur-sm shadow-lg animate-slide-in-up">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead className="font-bold text-xs uppercase tracking-wider">Name</TableHead>
+                <TableHead className="font-bold text-xs uppercase tracking-wider">Namespace</TableHead>
+                <TableHead className="font-bold text-xs uppercase tracking-wider">Type</TableHead>
+                <TableHead className="font-bold text-xs uppercase tracking-wider">Cluster IP</TableHead>
+                <TableHead className="font-bold text-xs uppercase tracking-wider">External IP</TableHead>
+                <TableHead className="font-bold text-xs uppercase tracking-wider">Ports</TableHead>
+                <TableHead className="font-bold text-xs uppercase tracking-wider">Age</TableHead>
+                <TableHead className="font-bold text-xs uppercase tracking-wider">Actions</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {filteredServices.length > 0 ? (
+                filteredServices.map((service) => (
+                  <TableRow
+                    key={service.id}
+                    className="hover:bg-muted/20 cursor-pointer transition-colors border-b border-border/30"
+                    onClick={() => {
+                      setSelectedService(service);
+                      setModalOpen(true);
+                    }}
+                    data-testid={`row-service-${service.id}`}
+                  >
+                    <TableCell className="font-semibold" data-testid={`text-service-name-${service.id}`}>
+                      {service.name}
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">{service.namespace}</span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getServiceTypeVariant(service.type)}>
+                        {service.type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-mono text-sm">{service.clusterIP ?? "None"}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-mono text-sm">{service.externalIP ?? "<none>"}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm">{service.ports ?? "N/A"}</span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{service.age ?? "N/A"}</TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setYamlService(service);
+                          setYamlViewerOpen(true);
+                        }}
+                        className="gap-1"
+                      >
+                        <FileCode className="h-3.5 w-3.5" />
+                        YAML
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    No services match your search
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <ResourceDetailModal
         resource={selectedService}
         type="service"
         open={modalOpen}
         onOpenChange={setModalOpen}
+      />
+
+      {yamlService && (
+        <YAMLViewer
+          resourceId={yamlService.id}
+          resourceType="service"
+          resourceName={yamlService.name}
+          open={yamlViewerOpen}
+          onOpenChange={setYamlViewerOpen}
+        />
+      )}
+
+      <CreateResourceDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        resourceType="service"
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import type { Pod, Node, Deployment, Service, Stats } from "@shared/schema";
+import type { Pod, Node, Deployment, Service, Stats, Route, Ingress, ConfigMap, Secret, PVC, NetworkPolicy, DeploymentConfig } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -7,6 +7,15 @@ export interface IStorage {
   getNodes(): Promise<Node[]>;
   getDeployments(): Promise<Deployment[]>;
   getServices(): Promise<Service[]>;
+  getRoutes(): Promise<Route[]>;
+  getIngresses(): Promise<Ingress[]>;
+  getConfigMaps(): Promise<ConfigMap[]>;
+  getSecrets(): Promise<Secret[]>;
+  getPVCs(): Promise<PVC[]>;
+  getNetworkPolicies(): Promise<NetworkPolicy[]>;
+  getDeploymentConfig(id: string): Promise<DeploymentConfig>;
+  getServiceConfig(id: string): Promise<DeploymentConfig>;
+  getPodConfig(id: string): Promise<DeploymentConfig>;
   scaleDeployment(id: string, replicas: number): Promise<Deployment>;
 }
 
@@ -15,12 +24,24 @@ export class MemStorage implements IStorage {
   private nodes: Node[];
   private deployments: Deployment[];
   private services: Service[];
+  private routes: Route[];
+  private ingresses: Ingress[];
+  private configMaps: ConfigMap[];
+  private secrets: Secret[];
+  private pvcs: PVC[];
+  private networkPolicies: NetworkPolicy[];
 
   constructor() {
-    this.pods = this.generateMockPods();
-    this.nodes = this.generateMockNodes();
-    this.deployments = this.generateMockDeployments();
-    this.services = this.generateMockServices();
+    this.pods = [];
+    this.nodes = [];
+    this.deployments = [];
+    this.services = [];
+    this.routes = [];
+    this.ingresses = [];
+    this.configMaps = [];
+    this.secrets = [];
+    this.pvcs = [];
+    this.networkPolicies = [];
   }
 
   private generateMockPods(): Pod[] {
@@ -120,6 +141,98 @@ export class MemStorage implements IStorage {
     return `${days}d`;
   }
 
+  private generateMockRoutes(): Route[] {
+    const namespaces = ["default", "production", "staging"];
+    const routeNames = ["web-route", "api-route", "admin-route", "dashboard-route"];
+    
+    return routeNames.map((name, i) => ({
+      id: randomUUID(),
+      name,
+      namespace: namespaces[i % namespaces.length],
+      host: `${name.replace("-route", "")}.example.com`,
+      path: i % 2 === 0 ? "/" : "/api",
+      targetService: `${name.replace("-route", "")}-service`,
+      targetPort: "8080",
+      tls: i % 2 === 0,
+      age: this.randomAge(),
+    }));
+  }
+
+  private generateMockIngresses(): Ingress[] {
+    const namespaces = ["default", "production"];
+    const ingressNames = ["main-ingress", "api-ingress", "admin-ingress"];
+    
+    return ingressNames.map((name, i) => ({
+      id: randomUUID(),
+      name,
+      namespace: namespaces[i % namespaces.length],
+      hosts: [`${name.replace("-ingress", "")}.example.com`, `www.${name.replace("-ingress", "")}.example.com`],
+      addresses: [`34.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`],
+      ports: "80, 443",
+      age: this.randomAge(),
+    }));
+  }
+
+  private generateMockConfigMaps(): ConfigMap[] {
+    const namespaces = ["default", "production", "staging"];
+    const configNames = ["app-config", "database-config", "redis-config", "nginx-config"];
+    
+    return configNames.map((name, i) => ({
+      id: randomUUID(),
+      name,
+      namespace: namespaces[i % namespaces.length],
+      dataCount: Math.floor(Math.random() * 10 + 1),
+      age: this.randomAge(),
+    }));
+  }
+
+  private generateMockSecrets(): Secret[] {
+    const namespaces = ["default", "production", "staging"];
+    const secretNames = ["db-credentials", "api-keys", "tls-cert", "registry-secret"];
+    const types = ["Opaque", "kubernetes.io/tls", "kubernetes.io/dockerconfigjson"];
+    
+    return secretNames.map((name, i) => ({
+      id: randomUUID(),
+      name,
+      namespace: namespaces[i % namespaces.length],
+      type: types[i % types.length],
+      dataCount: Math.floor(Math.random() * 5 + 1),
+      age: this.randomAge(),
+    }));
+  }
+
+  private generateMockPVCs(): PVC[] {
+    const namespaces = ["default", "production"];
+    const pvcNames = ["data-pvc", "logs-pvc", "uploads-pvc", "database-pvc"];
+    const statuses: PVC["status"][] = ["Bound", "Pending"];
+    
+    return pvcNames.map((name, i) => ({
+      id: randomUUID(),
+      name,
+      namespace: namespaces[i % namespaces.length],
+      status: statuses[i % statuses.length],
+      volume: `pv-${randomUUID().substring(0, 8)}`,
+      capacity: `${Math.floor(Math.random() * 100 + 10)}Gi`,
+      accessModes: "ReadWriteOnce",
+      storageClass: "standard",
+      age: this.randomAge(),
+    }));
+  }
+
+  private generateMockNetworkPolicies(): NetworkPolicy[] {
+    const namespaces = ["default", "production"];
+    const policyNames = ["allow-frontend", "deny-all", "allow-api", "database-policy"];
+    
+    return policyNames.map((name, i) => ({
+      id: randomUUID(),
+      name,
+      namespace: namespaces[i % namespaces.length],
+      podSelector: `app=${name.replace("-policy", "")}`,
+      policyTypes: i % 2 === 0 ? ["Ingress"] : ["Ingress", "Egress"],
+      age: this.randomAge(),
+    }));
+  }
+
   async getStats(): Promise<Stats> {
     const runningPods = this.pods.filter((p) => p.status === "Running").length;
     const failedPods = this.pods.filter((p) => p.status === "Failed").length;
@@ -133,6 +246,11 @@ export class MemStorage implements IStorage {
       runningPods,
       failedPods,
       readyNodes,
+      totalRoutes: this.routes.length,
+      totalIngress: this.ingresses.length,
+      totalConfigMaps: this.configMaps.length,
+      totalSecrets: this.secrets.length,
+      totalPVCs: this.pvcs.length,
     };
   }
 
@@ -164,6 +282,251 @@ export class MemStorage implements IStorage {
     deployment.available = Math.min(replicas, deployment.available || 0);
 
     return deployment;
+  }
+
+  async getRoutes(): Promise<Route[]> {
+    return this.routes;
+  }
+
+  async getIngresses(): Promise<Ingress[]> {
+    return this.ingresses;
+  }
+
+  async getConfigMaps(): Promise<ConfigMap[]> {
+    return this.configMaps;
+  }
+
+  async getSecrets(): Promise<Secret[]> {
+    return this.secrets;
+  }
+
+  async getPVCs(): Promise<PVC[]> {
+    return this.pvcs;
+  }
+
+  async getNetworkPolicies(): Promise<NetworkPolicy[]> {
+    return this.networkPolicies;
+  }
+
+  async getDeploymentConfig(id: string): Promise<DeploymentConfig> {
+    const deployment = this.deployments.find((d) => d.id === id);
+    if (!deployment) {
+      throw new Error("Deployment not found");
+    }
+
+    return {
+      apiVersion: "apps/v1",
+      kind: "Deployment",
+      metadata: {
+        name: deployment.name,
+        namespace: deployment.namespace,
+        labels: {
+          app: deployment.name,
+          version: "v1",
+        },
+        annotations: {
+          "deployment.kubernetes.io/revision": "1",
+        },
+      },
+      spec: {
+        replicas: deployment.replicas,
+        selector: {
+          matchLabels: {
+            app: deployment.name,
+          },
+        },
+        template: {
+          metadata: {
+            labels: {
+              app: deployment.name,
+              version: "v1",
+            },
+          },
+          spec: {
+            containers: [
+              {
+                name: deployment.name,
+                image: `nginx:latest`,
+                ports: [
+                  {
+                    containerPort: 8080,
+                    protocol: "TCP",
+                  },
+                ],
+                env: [
+                  {
+                    name: "ENVIRONMENT",
+                    value: deployment.namespace,
+                  },
+                ],
+                resources: {
+                  limits: {
+                    cpu: "500m",
+                    memory: "512Mi",
+                  },
+                  requests: {
+                    cpu: "250m",
+                    memory: "256Mi",
+                  },
+                },
+                livenessProbe: {
+                  httpGet: {
+                    path: "/health",
+                    port: 8080,
+                  },
+                  initialDelaySeconds: 30,
+                  periodSeconds: 10,
+                },
+                readinessProbe: {
+                  httpGet: {
+                    path: "/ready",
+                    port: 8080,
+                  },
+                  initialDelaySeconds: 5,
+                  periodSeconds: 5,
+                },
+              },
+            ],
+          },
+        },
+        strategy: {
+          type: "RollingUpdate",
+          rollingUpdate: {
+            maxSurge: 1,
+            maxUnavailable: 0,
+          },
+        },
+      },
+      status: {
+        replicas: deployment.replicas,
+        updatedReplicas: deployment.upToDate,
+        readyReplicas: deployment.ready,
+        availableReplicas: deployment.available,
+        conditions: [
+          {
+            type: "Available",
+            status: "True",
+            lastUpdateTime: new Date().toISOString(),
+            lastTransitionTime: new Date().toISOString(),
+            reason: "MinimumReplicasAvailable",
+            message: "Deployment has minimum availability.",
+          },
+        ],
+      },
+    };
+  }
+
+  async getServiceConfig(id: string): Promise<DeploymentConfig> {
+    const service = this.services.find((s) => s.id === id);
+    if (!service) {
+      throw new Error("Service not found");
+    }
+
+    return {
+      apiVersion: "v1",
+      kind: "Service",
+      metadata: {
+        name: service.name,
+        namespace: service.namespace,
+        labels: {
+          app: service.name,
+        },
+      },
+      spec: {
+        type: service.type,
+        selector: {
+          app: service.name.replace("-service", ""),
+        },
+        ports: [
+          {
+            name: "http",
+            protocol: "TCP",
+            port: 80,
+            targetPort: 8080,
+          },
+        ],
+        ...(service.type === "LoadBalancer" && {
+          loadBalancerIP: service.externalIP,
+        }),
+      },
+      status: service.type === "LoadBalancer" ? {
+        loadBalancer: {
+          ingress: [
+            {
+              ip: service.externalIP,
+            },
+          ],
+        },
+      } : undefined,
+    };
+  }
+
+  async getPodConfig(id: string): Promise<DeploymentConfig> {
+    const pod = this.pods.find((p) => p.id === id);
+    if (!pod) {
+      throw new Error("Pod not found");
+    }
+
+    return {
+      apiVersion: "v1",
+      kind: "Pod",
+      metadata: {
+        name: pod.name,
+        namespace: pod.namespace,
+        labels: {
+          app: pod.name.split("-")[0],
+        },
+      },
+      spec: {
+        containers: [
+          {
+            name: pod.name.split("-")[0],
+            image: "nginx:latest",
+            ports: [
+              {
+                containerPort: 8080,
+              },
+            ],
+            resources: {
+              limits: {
+                cpu: "500m",
+                memory: "512Mi",
+              },
+              requests: {
+                cpu: "250m",
+                memory: "256Mi",
+              },
+            },
+          },
+        ],
+        restartPolicy: "Always",
+      },
+      status: {
+        phase: pod.status,
+        conditions: [
+          {
+            type: "Ready",
+            status: pod.status === "Running" ? "True" : "False",
+            lastProbeTime: null,
+            lastTransitionTime: new Date().toISOString(),
+          },
+        ],
+        containerStatuses: [
+          {
+            name: pod.name.split("-")[0],
+            ready: pod.status === "Running",
+            restartCount: pod.restarts || 0,
+            image: "nginx:latest",
+            imageID: "docker-pullable://nginx@sha256:abc123",
+            state: {
+              running: pod.status === "Running" ? {
+                startedAt: new Date().toISOString(),
+              } : undefined,
+            },
+          },
+        ],
+      },
+    };
   }
 }
 

@@ -9,14 +9,14 @@ interface SearchInputProps {
 
 export function SearchInput({ value, onChange, placeholder = "Search..." }: SearchInputProps) {
   return (
-    <div className="relative">
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+    <div className="relative group">
+      <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
       <Input
         type="search"
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="pl-9"
+        className="pl-10 pr-4 h-11 bg-background/60 backdrop-blur-sm border-border/50 focus:border-primary/50 transition-all duration-200 rounded-lg shadow-sm"
         data-testid="input-search"
       />
     </div>
