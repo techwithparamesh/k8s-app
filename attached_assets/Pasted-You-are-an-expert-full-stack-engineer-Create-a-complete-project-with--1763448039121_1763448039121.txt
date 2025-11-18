@@ -1,0 +1,136 @@
+You are an expert full-stack engineer.  
+Create a complete project with:
+
+=========================================
+ OPENSHIFT-LIKE MINI PLATFORM (UI + API)
+=========================================
+
+Technology:
+- Frontend: React + Vite + TailwindCSS
+- Backend: Node.js + Express
+- No database needed
+- Use mock Kubernetes data (so it works in Replit)
+- Project must run with: 
+  - "npm run dev" → frontend
+  - "node server.js" → backend
+
+=========================================
+ PROJECT STRUCTURE
+=========================================
+
+Create exactly this folder structure:
+
+project/
+│
+├── frontend/
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.js
+│   └── src/
+│       ├── App.jsx
+│       ├── main.jsx
+│       ├── api/client.js
+│       ├── components/
+│       │   ├── Navbar.jsx
+│       │   ├── Sidebar.jsx
+│       │   ├── ResourceCard.jsx
+│       │   ├── PodList.jsx
+│       │   ├── NodeList.jsx
+│       │   ├── DeploymentList.jsx
+│       │   └── LogsViewer.jsx
+│       └── pages/
+│           ├── Dashboard.jsx
+│           ├── Nodes.jsx
+│           ├── Pods.jsx
+│           ├── Deployments.jsx
+│           └── Services.jsx
+│
+└── backend/
+    ├── server.js
+    ├── package.json
+    ├── routes/
+    │   ├── pods.js
+    │   ├── nodes.js
+    │   ├── deployments.js
+    │   └── services.js
+    └── kubernetes/
+        └── client.js
+
+=========================================
+ FRONTEND REQUIREMENTS
+=========================================
+
+1. Navigation Layout:
+   - Sidebar on the left
+   - Navbar on top
+   - Pages on right
+
+2. DashboardPage:
+   - Cards: Nodes, Pods, Deployments
+   - Uses API: GET http://localhost:5000/stats
+
+3. PodsPage:
+   - Table with name, status, namespace
+   - GET /pods
+
+4. NodesPage:
+   - Table with node name + CPU/Memory mock values
+   - GET /nodes
+
+5. DeploymentsPage:
+   - List deployment name, replicas, namespace
+   - GET /deployments
+
+6. Styling:
+   - Use TailwindCSS
+   - Layout similar to OpenShift (dark sidebar, white cards)
+
+=========================================
+ BACKEND REQUIREMENTS
+=========================================
+
+Backend API must expose:
+
+GET /stats
+GET /pods
+GET /nodes
+GET /deployments
+GET /services
+
+Backend returns mock Kubernetes JSON like:
+
+pods:
+[
+  { name: "app-pod-1", status: "Running", namespace: "default" },
+  { name: "db-pod", status: "Pending", namespace: "prod" }
+]
+
+nodes:
+[
+  { name: "node-1", cpu: "40%", memory: "2.3GB / 8GB" },
+  { name: "node-2", cpu: "67%", memory: "5.1GB / 8GB" }
+]
+
+deployments:
+[
+  { name: "frontend", replicas: 3, namespace: "default" },
+  { name: "backend", replicas: 2, namespace: "default" }
+]
+
+services:
+[
+  { name: "web-service", type: "ClusterIP", namespace: "default" }
+]
+
+=========================================
+ OUTPUT FORMAT
+=========================================
+Respond with:
+
+1. Full folder structure
+2. Full backend code (all files)
+3. Full frontend code (all files)
+4. Exact npm commands to run both servers in Replit
+
+DO NOT give explanations.
+JUST GIVE THE COMPLETE CODE.
